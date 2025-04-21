@@ -252,7 +252,7 @@ function VoiceAssistant() {
       await waitForSeconds(1);
     }
     const message = {
-      type: 'user_message',
+      type: 'transcript_final',
       content: typingMessage
     };
     dispatch(message);
