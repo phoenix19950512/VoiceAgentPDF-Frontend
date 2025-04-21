@@ -26,7 +26,7 @@
 
 @layer components {
   .user-bubble, .assistant-bubble {
-    @apply inline-block max-w-[80%] sm:max-w-[450px] py-2 px-4 rounded-2xl;
+    @apply inline-block max-w-[80%] sm:max-w-[450px] py-2 px-4 rounded-2xl break-all;
   }
 
   .user-bubble {

@@ -40,8 +40,8 @@ function VoiceAssistant() {
 
   async function uploadPdf(file) {
     setError(null);
-    if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
-      alert('Please select a valid PDF file');
+    if (!file) {
+      alert('Please select a valid file');
       return;
     }
 
@@ -66,12 +66,12 @@ function VoiceAssistant() {
           filePath: result.file_path
         });
       } else {
-        throw new Error(result.error || 'Failed to upload PDF');
+        throw new Error(result.error || 'Failed to upload file');
       }
     } catch (error) {
-      console.error('Error uploading PDF:', error);
-      setError(`Error uploading PDF: ${error.message}`);
-      alert('Failed to upload PDF: ' + error.message);
+      console.error('Error uploading file:', error);
+      setError(`Error uploading file: ${error.message}`);
+      alert('Failed to upload file: ' + error.message);
     } finally {
       setIsUploading(false);
     }
@@ -303,26 +303,79 @@ function VoiceAssistant() {
         <header className='flex flex-col gap-0.5 pt-4 text-center'>
           <h1 className='font-urbanist text-[1.65rem] font-semibold'>AI Voice Assistant</h1>
         </header>
-        <div className='flex flex-col items-start py-4 rounded-lg space-y-3 mt-0 mb-auto'>
-          {conversation.messages.map(({ role, content }, idx) => (
-            <div key={idx} className={role === 'user' ? 'user-bubble' : 'assistant-bubble'}>
-              {content}
+        {conversation.messages.length === 0 && (
+          <div className='flex flex-col items-center justify-center'>
+            <div className="text-center max-w-md mx-auto pt-12 pb-5">
+              <div className="w-20 h-20 bg-orange-400 drop-shadow-2xl rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-white"
+                >
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="22"></line>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome to Voice Assistant</h2>
+              <p className="text-gray-600 mb-6">
+                I can help answer questions, assist with tasks, or chat about topics that interest you.
+              </p>
+              <div className="flex flex-col gap-3 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-orange-500 text-xs font-bold">1</span>
+                  </div>
+                  <p>Upload a document or start without one</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-orange-500 text-xs font-bold">2</span>
+                  </div>
+                  <p>Click "Start conversation" to begin speaking</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-orange-500 text-xs font-bold">3</span>
+                  </div>
+                  <p>Or type your message in the text box below</p>
+                </div>
+              </div>
             </div>
-          ))}
-          {currentTranscript && (
-            <div className='user-bubble'>{currentTranscript}</div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+          </div>
+        )}
+        {conversation.messages.length > 0 && (
+          <div className='flex flex-col items-start py-4 rounded-lg space-y-3 mt-0 mb-auto'>
+            {conversation.messages.map(({ role, content }, idx) => (
+              <div key={idx} className={role === 'user' ? 'user-bubble' : 'assistant-bubble'}>
+                {content}
+              </div>
+            ))}
+            {currentTranscript && (
+              <div className='user-bubble'>{currentTranscript}</div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
         <div className="py-4">
           {!uploadedPdf ? (!isRunning && !isConnected) && (
             <label className='flex flex-col items-center justify-center cursor-pointer max-w-md mx-auto relative text-orange-500 px-6 py-4 rounded-lg border border-orange-500 border-dashed hover:bg-white hover:text-orange-500 transition-all duration-300'>
               <PdfIcon className="my-2 w-10 h-10" />
-              <div className="text-lg text-black my-2">Upload a PDF file</div>
-              <p className="text-sm text-black my-2">Drag and drop or click to upload</p>
+              <div className="text-lg text-black my-2">Upload Document</div>
+              <p className="text-sm text-gray-500 text-center">
+                Drag and drop or click to upload<br />
+                PDF, Word, Excel, PowerPoint, and Text files are supported
+              </p>
               <input
                 type='file'
-                accept='.pdf'
+                accept='.pdf, .docx, .doc, .xls, .xlsx, .pptx, .txt, .csv'
                 onChange={handleFileChange}
                 disabled={isUploading || isRunning}
                 className='opacity-0 absolute inset-0 cursor-pointer'
@@ -377,7 +430,7 @@ function VoiceAssistant() {
               <input
                 type="text"
                 placeholder='Type a message instead...'
-                className='w-full border border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500 rounded-lg p-2 transition-all duration-300'
+                className='w-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 rounded-lg p-2 transition-all duration-300'
                 value={typingMessage}
                 disabled={isLoading}
                 onChange={(e) => setTypingMessage(e.target.value)}
@@ -388,7 +441,7 @@ function VoiceAssistant() {
                 }}
               />
               <button
-                className='bg-orange-500 text-white p-2.5 rounded-lg'
+                className='bg-gray-300 text-white p-2.5 rounded-lg'
                 onClick={handleSendMessage}
                 disabled={isLoading}
               >
