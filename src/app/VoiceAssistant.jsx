@@ -280,10 +280,11 @@ function VoiceAssistant() {
           throw new Error('WebSocket connection failed');
         }
       }
+      const message = { type: 'transcript_final', content: typingMessage };
       if (wsRef.current) {
-        wsRef.current.send(JSON.stringify({ type: 'speech_final', content: typingMessage }));
+        wsRef.current.send(JSON.stringify(message));
       }
-      dispatch({ type: 'transcript_final', content: typingMessage });
+      dispatch(message);
       setTypingMessage('');
     } catch (err) {
       console.error('Error sending message:', err);
