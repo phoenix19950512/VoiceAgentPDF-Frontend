@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body, html, #root {
+    @apply text-main-text h-full;
+  }
+
+  ::-webkit-scrollbar {
+    @apply h-4 w-2;
+  }
+
+  ::-webkit-scrollbar:horizontal {
+    @apply h-4 w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent rounded;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-light-gray border border-white rounded;
+  }
+}
+
+@layer components {
+  .user-bubble, .assistant-bubble {
+    @apply inline-block max-w-[80%] sm:max-w-[450px] py-2 px-4 rounded-2xl;
+  }
+
+  .user-bubble {
+    @apply bg-light-gray text-main-text;
+  }
+
+  .assistant-bubble {
+    @apply self-end bg-primary-blue/85 text-white;
+  }
+
+  .wave {
+    width: 30px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: rgb(249, 115, 22);
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.85);
+    animation: l2 1.8s infinite linear;
+    animation-play-state: paused;
+    position: relative;
+  }
+  .wave.running {
+    animation-play-state: running;
+  }
+  .wave:before,
+  .wave:after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 0 rgb(249, 115, 22);
+    animation: inherit;
+    animation-delay: -0.6s;
+  }
+  .wave:after {
+    animation-delay: -1.2s;
+  }
+  @keyframes l2 {
+    100% {
+      box-shadow: 0 0 0 45px rgba(249, 115, 22, 0);
+    }
+  }
+}
