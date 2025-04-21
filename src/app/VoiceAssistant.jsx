@@ -339,7 +339,7 @@ function VoiceAssistant() {
                   <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
                     <span className="text-orange-500 text-xs font-bold">2</span>
                   </div>
-                  <p>Click "Start conversation" to begin speaking</p>
+                  <p>Click &ldquo;Start conversation&rdquo; to begin speaking</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
