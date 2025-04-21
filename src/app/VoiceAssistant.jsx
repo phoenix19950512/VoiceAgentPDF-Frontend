@@ -17,6 +17,7 @@ function VoiceAssistant() {
   const [uploadedPdf, setUploadedPdf] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [typingMessage, setTypingMessage] = useState('');
   const wsRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -246,22 +247,30 @@ function VoiceAssistant() {
     setIsListening(!isListening);
   }
 
-  function waitForSeconds(seconds) {
-    return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+  function waitForWebSocket() {
+    return new Promise(resolve => {
+      const interval = setInterval(() => {
+        if (wsRef.current && wsRef.current.readyState === 1) {
+          clearInterval(interval);
+          resolve(true);
+        }
+      }, 100);
+    });
   }
 
   async function handleSendMessage() {
     if (!typingMessage.trim()) return;
+    setIsLoading(true);
     if (!isConnected) {
       openWebSocketConnection();
-      await waitForSeconds(1);
+      await waitForWebSocket();
     }
-    const message = { type: 'speech_final', content: typingMessage };
-    dispatch(message);
     if (wsRef.current) {
-      wsRef.current.send(JSON.stringify(message));
+      wsRef.current.send(JSON.stringify({ type: 'speech_final', content: typingMessage }));
     }
+    dispatch({ type: 'transcript_final', content: typingMessage });
     setTypingMessage('');
+    setIsLoading(false);
   }
 
   const currentTranscript = [...conversation.finalTranscripts, conversation.interimTranscript].join(' ');
@@ -284,7 +293,7 @@ function VoiceAssistant() {
           <div ref={messagesEndRef} />
         </div>
         <div className="py-4">
-          {!uploadedPdf ? !isRunning && (
+          {!uploadedPdf ? (!isRunning && !isConnected) && (
             <label className='flex flex-col items-center justify-center cursor-pointer max-w-md mx-auto relative text-orange-500 px-6 py-4 rounded-lg border border-orange-500 border-dashed hover:bg-white hover:text-orange-500 transition-all duration-300'>
               <PdfIcon className="my-2 w-10 h-10" />
               <div className="text-lg text-black my-2">Upload a PDF file</div>
@@ -343,6 +352,7 @@ function VoiceAssistant() {
                 placeholder='Type a message instead...'
                 className='w-full border border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500 rounded-lg p-2 transition-all duration-300'
                 value={typingMessage}
+                disabled={isLoading}
                 onChange={(e) => setTypingMessage(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === 'NumpadEnter') {
@@ -353,6 +363,7 @@ function VoiceAssistant() {
               <button
                 className='bg-orange-500 text-white p-2.5 rounded-lg'
                 onClick={handleSendMessage}
+                disabled={isLoading}
               >
                 <SendIcon />
               </button>
