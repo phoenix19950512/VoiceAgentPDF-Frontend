@@ -12,6 +12,7 @@ const initialConversation = { messages: [], finalTranscripts: [], interimTranscr
 
 function VoiceAssistant() {
   const [conversation, dispatch] = useReducer(conversationReducer, initialConversation);
+  const [error, setError] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [uploadedPdf, setUploadedPdf] = useState(null);
@@ -38,6 +39,7 @@ function VoiceAssistant() {
   }
 
   async function uploadPdf(file) {
+    setError(null);
     if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
       alert('Please select a valid PDF file');
       return;
@@ -68,6 +70,7 @@ function VoiceAssistant() {
       }
     } catch (error) {
       console.error('Error uploading PDF:', error);
+      setError(`Error uploading PDF: ${error.message}`);
       alert('Failed to upload PDF: ' + error.message);
     } finally {
       setIsUploading(false);
@@ -215,6 +218,7 @@ function VoiceAssistant() {
   }
 
   async function startConversation() {
+    setError(null);
     dispatch({ type: 'reset' });
     try {
       if (!isConnected) {
@@ -225,7 +229,8 @@ function VoiceAssistant() {
       setIsRunning(true);
       setIsListening(true);
     } catch (err) {
-      console.log('Error starting conversation:', err);
+      setError(`Error starting conversation: ${err.message}`);
+      console.error('Error starting conversation:', err);
       endConversation();
     }
   }
@@ -255,22 +260,36 @@ function VoiceAssistant() {
           resolve(true);
         }
       }, 100);
+      setTimeout(() => {
+        clearInterval(interval);
+        resolve(false);
+      }, 5000);
     });
   }
 
   async function handleSendMessage() {
+    setError(null);
     if (!typingMessage.trim()) return;
-    setIsLoading(true);
-    if (!isConnected) {
-      openWebSocketConnection();
-      await waitForWebSocket();
+    try {
+      setIsLoading(true);
+      if (!isConnected) {
+        openWebSocketConnection();
+        const isConnected = await waitForWebSocket();
+        if (!isConnected) {
+          throw new Error('WebSocket connection failed');
+        }
+      }
+      if (wsRef.current) {
+        wsRef.current.send(JSON.stringify({ type: 'speech_final', content: typingMessage }));
+      }
+      dispatch({ type: 'transcript_final', content: typingMessage });
+      setTypingMessage('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError(`Error sending message: ${err.message}`);
+    } finally {
+      setIsLoading(false);
     }
-    if (wsRef.current) {
-      wsRef.current.send(JSON.stringify({ type: 'speech_final', content: typingMessage }));
-    }
-    dispatch({ type: 'transcript_final', content: typingMessage });
-    setTypingMessage('');
-    setIsLoading(false);
   }
 
   const currentTranscript = [...conversation.finalTranscripts, conversation.interimTranscript].join(' ');
@@ -320,6 +339,11 @@ function VoiceAssistant() {
                   Remove
                 </button>
               )}
+            </div>
+          )}
+          {error && (
+            <div className='bg-red-500 text-white px-4 py-3 rounded my-4'>
+              {error}
             </div>
           )}
           <div className={`flex flex-col justify-center items-center pt-16 pb-4`}>
