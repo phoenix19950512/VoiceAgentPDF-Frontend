@@ -49,7 +49,8 @@ function VoiceAssistant() {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      const newFileName = file.name.replace(/\.[^/.]+$/, '.pdf');
+      formData.append('file', new File([file], newFileName, { type: file.type }));
       formData.append('session_id', sessionIdRef.current);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
