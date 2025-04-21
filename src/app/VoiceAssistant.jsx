@@ -16,6 +16,7 @@ function VoiceAssistant() {
   const [isListening, setIsListening] = useState(false);
   const [uploadedPdf, setUploadedPdf] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [typingMessage, setTypingMessage] = useState('');
   const wsRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -93,6 +94,7 @@ function VoiceAssistant() {
         : { init: true }; // Empty object or some flag to indicate no PDF
 
       wsRef.current.send(JSON.stringify(initialMessage));
+      setIsConnected(true);
     };
 
     function handleAudioStream(streamData) {
@@ -125,6 +127,7 @@ function VoiceAssistant() {
 
     wsRef.current.onclose = () => {
       endConversation();
+      setIsConnected(false);
     }
   }
 
@@ -213,7 +216,9 @@ function VoiceAssistant() {
   async function startConversation() {
     dispatch({ type: 'reset' });
     try {
-      openWebSocketConnection();
+      if (!isConnected) {
+        openWebSocketConnection();
+      }
       await startMicrophone();
       startAudioPlayer();
       setIsRunning(true);
@@ -247,14 +252,11 @@ function VoiceAssistant() {
 
   async function handleSendMessage() {
     if (!typingMessage.trim()) return;
-    if (!isRunning) {
-      await startConversation();
+    if (!isConnected) {
+      openWebSocketConnection();
       await waitForSeconds(1);
     }
-    const message = {
-      type: 'transcript_final',
-      content: typingMessage
-    };
+    const message = { type: 'speech_final', content: typingMessage };
     dispatch(message);
     if (wsRef.current) {
       wsRef.current.send(JSON.stringify(message));
