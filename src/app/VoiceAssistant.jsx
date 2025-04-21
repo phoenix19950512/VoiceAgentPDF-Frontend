@@ -62,7 +62,7 @@ function VoiceAssistant() {
 
       if (response.ok) {
         setUploadedPdf({
-          name: file.name,
+          name: `${file.name}.pdf`,
           filePath: result.file_path
         });
       } else {
