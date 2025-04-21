@@ -263,7 +263,7 @@ function VoiceAssistant() {
       setTimeout(() => {
         clearInterval(interval);
         resolve(false);
-      }, 5000);
+      }, 30000);
     });
   }
 
