@@ -132,6 +132,7 @@ function VoiceAssistant() {
     wsRef.current.onclose = () => {
       endConversation();
       setIsConnected(false);
+      stopAudioPlayer();
     }
   }
 
@@ -223,9 +224,9 @@ function VoiceAssistant() {
     try {
       if (!isConnected) {
         openWebSocketConnection();
+        startAudioPlayer();
       }
       await startMicrophone();
-      startAudioPlayer();
       setIsRunning(true);
       setIsListening(true);
     } catch (err) {
@@ -238,7 +239,6 @@ function VoiceAssistant() {
   function endConversation() {
     closeWebSocketConnection();
     stopMicrophone();
-    stopAudioPlayer();
     setIsRunning(false);
     setIsListening(false);
   }
@@ -275,6 +275,7 @@ function VoiceAssistant() {
       if (!isConnected) {
         dispatch({ type: 'reset' });
         openWebSocketConnection();
+        startAudioPlayer();
         const isConnected = await waitForWebSocket();
         if (!isConnected) {
           throw new Error('WebSocket connection failed');
