@@ -5,7 +5,8 @@ import Image from 'next/image';
 import conversationReducer from './conversationReducer';
 import micIcon from '/public/mic.svg';
 import micOffIcon from '/public/mic-off.svg';
-import PdfIcon from './pdfIcon';
+import PdfIcon from '../icons/pdfIcon';
+import SendIcon from '../icons/sendIcon';
 
 const initialConversation = { messages: [], finalTranscripts: [], interimTranscript: '' };
 
@@ -15,6 +16,7 @@ function VoiceAssistant() {
   const [isListening, setIsListening] = useState(false);
   const [uploadedPdf, setUploadedPdf] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [typingMessage, setTypingMessage] = useState('');
   const wsRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const mediaSourceRef = useRef(null);
@@ -239,49 +241,77 @@ function VoiceAssistant() {
     setIsListening(!isListening);
   }
 
+  function waitForSeconds(seconds) {
+    return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+  }
+
+  async function handleSendMessage() {
+    if (!typingMessage.trim()) return;
+    if (!isRunning) {
+      await startConversation();
+      await waitForSeconds(1);
+    }
+    const message = {
+      type: 'user_message',
+      content: typingMessage
+    };
+    dispatch(message);
+    if (wsRef.current) {
+      wsRef.current.send(JSON.stringify(message));
+    }
+    setTypingMessage('');
+  }
+
   const currentTranscript = [...conversation.finalTranscripts, conversation.interimTranscript].join(' ');
 
   return (
     <div className='w-full min-h-screen bg-gradient-to-b from-primary-orange/50 to-primary-orange/10'>
-      <div className='w-full max-w-3xl mx-auto px-4'>
-        <div>
-          <header className='flex flex-col gap-0.5 pt-4 text-center'>
-            <h1 className='font-urbanist text-[1.65rem] font-semibold'>AI Voice Assistant</h1>
-          </header>
-
-          <div className="py-4">
-            {!uploadedPdf ? !isRunning && (
-              <label className='flex flex-col items-center justify-center cursor-pointer max-w-md mx-auto relative text-orange-500 px-6 py-4 rounded-lg border border-orange-500 border-dashed hover:bg-white hover:text-orange-500 transition-all duration-300'>
-                <PdfIcon className="my-2 w-10 h-10" />
-                <div className="text-lg text-black my-2">Upload a PDF file</div>
-                <p className="text-sm text-black my-2">Drag and drop or click to upload</p>
-                <input
-                  type='file'
-                  accept='.pdf'
-                  onChange={handleFileChange}
-                  disabled={isUploading || isRunning}
-                  className='opacity-0 absolute inset-0 cursor-pointer'
-                />
-              </label>
-            ) : (
-              <div className='flex items-center justify-between max-w-md mx-auto bg-white rounded-lg p-4'>
-                <div className='flex items-center gap-2'>
-                  <PdfIcon className="w-5 h-5 text-orange-500" />
-                  <span className='text-sm font-medium'>{uploadedPdf.name}</span>
-                </div>
-                {!isRunning && (
-                  <button
-                    onClick={clearUploadedPdf}
-                    className='text-orange-500 hover:text-orange-700 text-sm transition-all duration-300'
-                  >
-                    Remove
-                  </button>
-                )}
+      <div className='flex flex-col justify-between w-full min-h-screen max-w-3xl mx-auto px-4'>
+        <header className='flex flex-col gap-0.5 pt-4 text-center'>
+          <h1 className='font-urbanist text-[1.65rem] font-semibold'>AI Voice Assistant</h1>
+        </header>
+        <div className='flex flex-col items-start py-4 rounded-lg space-y-3 mt-0 mb-auto'>
+          {conversation.messages.map(({ role, content }, idx) => (
+            <div key={idx} className={role === 'user' ? 'user-bubble' : 'assistant-bubble'}>
+              {content}
+            </div>
+          ))}
+          {currentTranscript && (
+            <div className='user-bubble'>{currentTranscript}</div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+        <div className="py-4">
+          {!uploadedPdf ? !isRunning && (
+            <label className='flex flex-col items-center justify-center cursor-pointer max-w-md mx-auto relative text-orange-500 px-6 py-4 rounded-lg border border-orange-500 border-dashed hover:bg-white hover:text-orange-500 transition-all duration-300'>
+              <PdfIcon className="my-2 w-10 h-10" />
+              <div className="text-lg text-black my-2">Upload a PDF file</div>
+              <p className="text-sm text-black my-2">Drag and drop or click to upload</p>
+              <input
+                type='file'
+                accept='.pdf'
+                onChange={handleFileChange}
+                disabled={isUploading || isRunning}
+                className='opacity-0 absolute inset-0 cursor-pointer'
+              />
+            </label>
+          ) : (
+            <div className='flex items-center justify-between max-w-md mx-auto bg-white rounded-lg p-4'>
+              <div className='flex items-center gap-2'>
+                <PdfIcon className="w-5 h-5 text-orange-500" />
+                <span className='text-sm font-medium'>{uploadedPdf.name}</span>
               </div>
-            )}
-          </div>
-
-          <div className={`flex flex-col justify-center items-center ${conversation.messages.length > 0 ? 'pt-10' : 'pt-20'} pb-4`}>
+              {!isRunning && (
+                <button
+                  onClick={clearUploadedPdf}
+                  className='text-orange-500 hover:text-orange-700 text-sm transition-all duration-300'
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          )}
+          <div className={`flex flex-col justify-center items-center pt-16 pb-4`}>
             <div className={`wave ${isRunning ? 'running' : ''}`} />
             <p className='mt-12 text-[13px] text-orange-500'>
               {isRunning
@@ -305,18 +335,27 @@ function VoiceAssistant() {
                 <Image src={isListening ? micIcon : micOffIcon} height={21} width={21} alt='microphone' />
               </button>
             </div>
-          </div>
-        </div>
-        <div className='flex flex-col items-start py-4 rounded-lg space-y-3'>
-          {conversation.messages.map(({ role, content }, idx) => (
-            <div key={idx} className={role === 'user' ? 'user-bubble' : 'assistant-bubble'}>
-              {content}
+            <div className="mt-4 flex items-center gap-3 w-full mx-auto">
+              <input
+                type="text"
+                placeholder='Type a message instead...'
+                className='w-full border border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500 rounded-lg p-2 transition-all duration-300'
+                value={typingMessage}
+                onChange={(e) => setTypingMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === 'NumpadEnter') {
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <button
+                className='bg-orange-500 text-white p-2.5 rounded-lg'
+                onClick={handleSendMessage}
+              >
+                <SendIcon />
+              </button>
             </div>
-          ))}
-          {currentTranscript && (
-            <div className='user-bubble'>{currentTranscript}</div>
-          )}
-          <div ref={messagesEndRef} />
+          </div>
         </div>
       </div>
     </div>
