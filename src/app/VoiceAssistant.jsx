@@ -273,6 +273,7 @@ function VoiceAssistant() {
     try {
       setIsLoading(true);
       if (!isConnected) {
+        dispatch({ type: 'reset' });
         openWebSocketConnection();
         const isConnected = await waitForWebSocket();
         if (!isConnected) {
