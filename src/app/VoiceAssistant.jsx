@@ -244,13 +244,13 @@ function VoiceAssistant() {
   return (
     <div className='w-full min-h-screen bg-gradient-to-b from-primary-orange/50 to-primary-orange/10'>
       <div className='w-full max-w-3xl mx-auto px-4'>
-        <div className='sticky top-0'>
+        <div>
           <header className='flex flex-col gap-0.5 pt-4 text-center'>
             <h1 className='font-urbanist text-[1.65rem] font-semibold'>AI Voice Assistant</h1>
           </header>
 
           <div className="py-4">
-            {!uploadedPdf ? (
+            {!uploadedPdf ? !isRunning && (
               <label className='flex flex-col items-center justify-center cursor-pointer max-w-md mx-auto relative text-orange-500 px-6 py-4 rounded-lg border border-orange-500 border-dashed hover:bg-white hover:text-orange-500 transition-all duration-300'>
                 <PdfIcon className="my-2 w-10 h-10" />
                 <div className="text-lg text-black my-2">Upload a PDF file</div>
@@ -281,7 +281,7 @@ function VoiceAssistant() {
             )}
           </div>
 
-          <div className={`sticky top-0 flex flex-col justify-center items-center ${conversation.messages.length > 0 ? 'pt-10' : 'pt-20'} pb-4`}>
+          <div className={`flex flex-col justify-center items-center ${conversation.messages.length > 0 ? 'pt-10' : 'pt-20'} pb-4`}>
             <div className={`wave ${isRunning ? 'running' : ''}`} />
             <p className='mt-12 text-[13px] text-orange-500'>
               {isRunning
