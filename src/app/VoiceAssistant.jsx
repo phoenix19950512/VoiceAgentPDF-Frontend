@@ -247,11 +247,8 @@ function VoiceAssistant() {
     try {
       if (!isConnected) {
         openWebSocketConnection();
-        startAudioPlayer();
       }
       try {
-        stopMicrophone();
-        mediaRecorderRef.current = null;
         await startMicrophone();
       } catch (micError) {
         // Handle specific microphone access errors
@@ -262,6 +259,9 @@ function VoiceAssistant() {
         } else {
           throw new Error(`Microphone error: ${micError.message}`);
         }
+      }
+      if (!isConnected) {
+        startAudioPlayer();
       }
       setIsRunning(true);
       setIsListening(true);
