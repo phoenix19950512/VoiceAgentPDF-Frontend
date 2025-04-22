@@ -146,14 +146,35 @@ function VoiceAssistant() {
   }
 
   async function startMicrophone() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorderRef.current = new MediaRecorder(stream);
-    mediaRecorderRef.current.addEventListener('dataavailable', e => {
-      if (e.data.size > 0 && wsRef.current.readyState == WebSocket.OPEN) {
-        wsRef.current.send(e.data);
+    try {
+      // Request microphone with audio quality options
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      
+      // Check if audio context is allowed (for audio output)
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
       }
-    });
-    mediaRecorderRef.current.start(250);
+      
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      mediaRecorderRef.current.addEventListener('dataavailable', e => {
+        if (e.data.size > 0 && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(e.data);
+        }
+      });
+      mediaRecorderRef.current.start(250);
+      
+      return true;
+    } catch (error) {
+      console.error('Microphone access error:', error);
+      throw error; // Re-throw to be handled by the caller
+    }
   }
 
   function stopMicrophone() {
@@ -424,7 +445,7 @@ function VoiceAssistant() {
           )}
           <div className={`flex flex-col justify-center items-center pt-16 pb-4`}>
             <div className={`wave ${isRunning ? 'running' : ''}`} />
-            <p className='mt-12 text-[13px] text-orange-500'>
+            <p className='mt-12 text-[13px] text-orange-500 text-center'>
               {isRunning
                 ? 'You can also end the conversation by saying "bye" or "goodbye"'
                 : 'Click here to start a voice conversation with the assistant'
