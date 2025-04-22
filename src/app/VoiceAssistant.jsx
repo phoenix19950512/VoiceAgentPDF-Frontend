@@ -233,7 +233,6 @@ function VoiceAssistant() {
       try {
         await startMicrophone();
       } catch (micError) {
-        // Handle specific microphone access errors
         if (micError.name === 'NotAllowedError' || micError.name === 'PermissionDeniedError') {
           throw new Error('Microphone access denied. Please allow microphone access to use the voice assistant.');
         } else if (micError.name === 'NotFoundError' || micError.name === 'DevicesNotFoundError') {
