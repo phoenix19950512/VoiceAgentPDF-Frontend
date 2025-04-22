@@ -18,6 +18,7 @@ function VoiceAssistant() {
   const [uploadedPdf, setUploadedPdf] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isFileSent, setIsFileSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [typingMessage, setTypingMessage] = useState('');
   const wsRef = useRef(null);
@@ -94,11 +95,6 @@ function VoiceAssistant() {
     wsRef.current.binaryType = 'arraybuffer';
 
     wsRef.current.onopen = () => {
-      const initialMessage = uploadedPdf
-        ? { file_path: uploadedPdf.filePath }
-        : { init: true }; // Empty object or some flag to indicate no PDF
-
-      wsRef.current.send(JSON.stringify(initialMessage));
       setIsConnected(true);
     };
 
@@ -115,8 +111,15 @@ function VoiceAssistant() {
         endConversation();
       } else {
         // If user interrupts while audio is playing, skip the audio currently playing
-        if (message.type === 'transcript_final' && isAudioPlaying()) {
-          skipCurrentAudio();
+        if (message.type === 'transcript_final') {
+          if (isAudioPlaying()) {
+            skipCurrentAudio();
+          }
+          if (uploadedPdf && !isFileSent) {
+            const initialMessage = { type: 'attach', content: uploadedPdf.filePath };
+            wsRef.current.send(JSON.stringify(initialMessage));
+            setIsFileSent(true);
+          }
         }
         dispatch(message);
       }
@@ -242,6 +245,8 @@ function VoiceAssistant() {
     stopMicrophone();
     setIsRunning(false);
     setIsListening(false);
+    setIsFileSent(false);
+    setUploadedPdf(null);
   }
 
   function toggleListening() {
@@ -281,6 +286,11 @@ function VoiceAssistant() {
         if (!isConnected) {
           throw new Error('WebSocket connection failed');
         }
+      }
+      if (uploadedPdf && !isFileSent) {
+        const initialMessage = { type: 'attach', content: uploadedPdf.filePath };
+        wsRef.current.send(JSON.stringify(initialMessage));
+        setIsFileSent(true);
       }
       const message = { type: 'transcript_final', content: typingMessage };
       if (wsRef.current) {
@@ -366,7 +376,7 @@ function VoiceAssistant() {
           </div>
         )}
         <div className="py-4">
-          {!uploadedPdf ? (!isRunning && !isConnected) && (
+          {!uploadedPdf ? (
             <label className='flex flex-col items-center justify-center cursor-pointer max-w-md mx-auto relative text-orange-500 px-6 py-4 rounded-lg border border-orange-500 border-dashed hover:bg-white hover:text-orange-500 transition-all duration-300'>
               <PdfIcon className="my-2 w-10 h-10" />
               <div className="text-lg text-black my-2">Upload Document</div>
@@ -388,7 +398,7 @@ function VoiceAssistant() {
                 <PdfIcon className="w-5 h-5 text-orange-500" />
                 <span className='text-sm font-medium'>{uploadedPdf.name}</span>
               </div>
-              {!isRunning && (
+              {!isFileSent && (
                 <button
                   onClick={clearUploadedPdf}
                   className='text-orange-500 hover:text-orange-700 text-sm transition-all duration-300'
