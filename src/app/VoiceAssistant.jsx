@@ -63,6 +63,11 @@ function VoiceAssistant() {
       const result = await response.json();
 
       if (response.ok) {
+        if (isRunning && !isFileSent) {
+          const initialMessage = { type: 'attach', content: result.file_path };
+          wsRef.current.send(JSON.stringify(initialMessage));
+          setIsFileSent(true);
+        }
         setUploadedPdf({
           name: file.name,
           filePath: result.file_path
@@ -111,15 +116,8 @@ function VoiceAssistant() {
         endConversation();
       } else {
         // If user interrupts while audio is playing, skip the audio currently playing
-        if (message.type === 'transcript_final') {
-          if (isAudioPlaying()) {
-            skipCurrentAudio();
-          }
-          if (uploadedPdf && !isFileSent) {
-            const initialMessage = { type: 'attach', content: uploadedPdf.filePath };
-            wsRef.current.send(JSON.stringify(initialMessage));
-            setIsFileSent(true);
-          }
+        if (message.type === 'transcript_final' && isAudioPlaying()) {
+          skipCurrentAudio();
         }
         dispatch(message);
       }
@@ -233,6 +231,7 @@ function VoiceAssistant() {
       try {
         await startMicrophone();
       } catch (micError) {
+        // Handle specific microphone access errors
         if (micError.name === 'NotAllowedError' || micError.name === 'PermissionDeniedError') {
           throw new Error('Microphone access denied. Please allow microphone access to use the voice assistant.');
         } else if (micError.name === 'NotFoundError' || micError.name === 'DevicesNotFoundError') {
@@ -349,7 +348,7 @@ function VoiceAssistant() {
               <p className="text-gray-600 mb-6">
                 I can help answer questions, assist with tasks, or chat about topics that interest you.
               </p>
-              <div className="flex flex-col gap-3 text-sm text-gray-600">
+              <div className="flex flex-col gap-3 w-fit justify-self-center text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
                     <span className="text-orange-500 text-xs font-bold">1</span>
