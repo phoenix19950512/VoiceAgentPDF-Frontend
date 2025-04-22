@@ -148,20 +148,20 @@ function VoiceAssistant() {
   async function startMicrophone() {
     try {
       // Request microphone with audio quality options
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
-        } 
+        }
       });
-      
+
       // Check if audio context is allowed (for audio output)
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
-      
+
       mediaRecorderRef.current = new MediaRecorder(stream);
       mediaRecorderRef.current.addEventListener('dataavailable', e => {
         if (e.data.size > 0 && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -169,7 +169,7 @@ function VoiceAssistant() {
         }
       });
       mediaRecorderRef.current.start(250);
-      
+
       return true;
     } catch (error) {
       console.error('Microphone access error:', error);
@@ -250,6 +250,8 @@ function VoiceAssistant() {
         startAudioPlayer();
       }
       try {
+        stopMicrophone();
+        mediaRecorderRef.current = null;
         await startMicrophone();
       } catch (micError) {
         // Handle specific microphone access errors
