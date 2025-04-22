@@ -230,11 +230,22 @@ function VoiceAssistant() {
         openWebSocketConnection();
         startAudioPlayer();
       }
-      await startMicrophone();
+      try {
+        await startMicrophone();
+      } catch (micError) {
+        // Handle specific microphone access errors
+        if (micError.name === 'NotAllowedError' || micError.name === 'PermissionDeniedError') {
+          throw new Error('Microphone access denied. Please allow microphone access to use the voice assistant.');
+        } else if (micError.name === 'NotFoundError' || micError.name === 'DevicesNotFoundError') {
+          throw new Error('No microphone found. Please connect a microphone to use the voice assistant.');
+        } else {
+          throw new Error(`Microphone error: ${micError.message}`);
+        }
+      }
       setIsRunning(true);
       setIsListening(true);
     } catch (err) {
-      setError(`Error starting conversation: ${err.message}`);
+      setError(`${err.message}`);
       console.error('Error starting conversation:', err);
       endConversation();
     }
