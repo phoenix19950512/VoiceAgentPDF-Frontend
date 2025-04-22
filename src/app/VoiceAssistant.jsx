@@ -392,13 +392,13 @@ function VoiceAssistant() {
               <div className="text-lg text-black my-2">Upload Document</div>
               <p className="text-sm text-gray-500 text-center">
                 Drag and drop or click to upload<br />
-                PDF, Word, Excel, PowerPoint, and Text files are supported
+                PDF, Word, and Text files are supported
               </p>
               <input
                 type='file'
-                accept='.pdf, .docx, .doc, .xls, .xlsx, .pptx, .txt, .csv'
+                accept='.pdf, .docx, .doc, .txt, .csv'
                 onChange={handleFileChange}
-                disabled={isUploading || isRunning}
+                disabled={isUploading || isFileSent}
                 className='opacity-0 absolute inset-0 cursor-pointer'
               />
             </label>
